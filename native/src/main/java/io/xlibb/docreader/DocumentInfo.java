@@ -28,37 +28,9 @@ import org.apache.tika.metadata.Metadata;
  * @param metadata the extracted metadata from the document
  * @param content the extracted text content from the document
  */
-public record DocumentInfo(
+record DocumentInfo(
     String mimeType,
     String extension,
     Metadata metadata,
     String content
-) {
-    public DocumentInfo(String mimeType, String extension, Metadata metadata, String content) {
-        this.mimeType = mimeType;
-        this.extension = extension;
-        this.metadata = copyMetadata(metadata);
-        this.content = content;
-    }
-
-    @Override
-    public Metadata metadata() {
-        return copyMetadata(metadata);
-    }
-
-    private static Metadata copyMetadata(Metadata original) {
-        if (original == null) {
-            return null;
-        }
-        Metadata copy = new Metadata();
-        for (String name : original.names()) {
-            String[] values = original.getValues(name);
-            if (values != null) {
-                for (String value : values) {
-                    copy.add(name, value);
-                }
-            }
-        }
-        return copy;
-    }
-}
+) { }
