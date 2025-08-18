@@ -20,6 +20,8 @@ public type DocumentInfo record {|
     string mimeType;
     # The file extension
     string extension;
+    # Metadata extracted from the document
+    map<string> metadata;
     # The extracted text content from the document
     string content;
 |};

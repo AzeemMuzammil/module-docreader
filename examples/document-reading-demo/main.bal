@@ -29,7 +29,8 @@ final string[] SAMPLE_DOCUMENTS = [
     "./resources/sample.csv",
     "./resources/sample.xml",
     "./resources/sample.json",
-    "./resources/sample.rtf"
+    "./resources/sample.rtf",
+    "./resources/sample.epub"
 ];
 
 public function main() returns error? {
@@ -70,6 +71,20 @@ function parseAndDisplayDocument(string filePath) returns error? {
         io:println(string `   📋 MIME Type: ${result.mimeType}`);
         io:println(string `   🏷️  Extension: ${result.extension}`);
         io:println(string `   📏 Content Length: ${result.content.length()} characters`);
+        
+        // Display metadata
+        io:println("   🔍 Metadata:");
+        if result.metadata.length() > 0 {
+            foreach string key in result.metadata.keys() {
+                string value = result.metadata[key] ?: "";
+                if value.length() > 100 {
+                    value = value.substring(0, 100) + "...";
+                }
+                io:println(string `      ${key}: ${value}`);
+            }
+        } else {
+            io:println("      No metadata available");
+        }
 
         // Show content preview (first 200 characters)
         string preview = result.content.length() > 200 ?

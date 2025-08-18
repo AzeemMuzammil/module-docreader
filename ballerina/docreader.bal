@@ -16,10 +16,10 @@
 
 import ballerina/jballerina.java;
 
-# Reads a document file and extracts its MIME type, extension, and content.
+# Reads a document file and extracts its MIME type, extension, metadata, and content.
 #
 # + filePath - The absolute or relative path to the document file to be read
-# + return - `DocumentInfo` record containing the MIME type, extension, and content, or `Error` on failure
+# + return - `DocumentInfo` record containing the MIME type, extension, metadata, and content, or `Error` on failure
 public isolated function readDocument(@display {label: "File Path"} string filePath)
         returns DocumentInfo|Error = @java:Method {
     'class: "io.xlibb.docreader.DocReader"

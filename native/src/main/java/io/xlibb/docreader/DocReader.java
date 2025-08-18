@@ -49,41 +49,28 @@ import static io.xlibb.docreader.ModuleUtils.createError;
 public class DocReader {
     private static final String MIME_TYPE_FIELD = "mimeType";
     private static final String EXTENSION_FIELD = "extension";
+    private static final String METADATA_FIELD = "metadata";
     private static final String CONTENT_FIELD = "content";
     private static final String DEFAULT_MIME_TYPE = "application/octet-stream";
     private static final String DOCUMENT_INFO_RECORD = "DocumentInfo";
+    private static final String X_TIKA_PREFIX = "x-tika";
 
     private static final Tika tika = new Tika();
 
     /**
-     * Reads a document file and extracts its MIME type, extension, and content.
+     * Reads a document file and extracts its MIME type, extension, metadata, and content.
      *
      * @param filePath the absolute or relative path to the document file to be read
-     * @return DocumentInfo record containing the MIME type, extension, and content, or Error on failure
+     * @return DocumentInfo record containing the MIME type, extension, metadata, and content, or Error on failure
      */
     public static Object readDocument(BString filePath) {
         try {
-            String filePathStr = filePath.getValue();
-            File file = new File(filePathStr);
-            
-            if (!file.exists()) {
-                return createError("File does not exist: " + filePathStr);
-            }
-            
-            if (!file.isFile()) {
-                return createError("Path is not a file: " + filePathStr);
-            }
-
-            // Extract file extension
+            File file = validateAndGetFile(filePath.getValue());
             String extension = extractFileExtension(file);
-
-            // Detect MIME type and extract content
-            String mimeType = tika.detect(file);
-            String content = extractContent(file);
-
-            // Create and return Ballerina DocumentInfo record
-            return createDocumentInfo(mimeType, extension, content);
-            
+            DocumentInfo docInfo = extractDocumentInfo(file, extension);
+            return createDocumentInfo(docInfo);
+        } catch (IllegalArgumentException e) {
+            return createError(e.getMessage());
         } catch (IOException | TikaException | SAXException e) {
             return createError("Error reading document: " + e.getMessage());
         } catch (RuntimeException e) {
@@ -91,10 +78,24 @@ public class DocReader {
         }
     }
 
+    private static File validateAndGetFile(String filePathStr) {
+        File file = new File(filePathStr);
+
+        if (!file.exists()) {
+            throw new IllegalArgumentException("File does not exist: " + filePathStr);
+        }
+
+        if (!file.isFile()) {
+            throw new IllegalArgumentException("Path is not a file: " + filePathStr);
+        }
+
+        return file;
+    }
+
     private static String extractFileExtension(File file) {
         Path path = Paths.get(file.getAbsolutePath());
         Path fileNamePath = path.getFileName();
-        
+
         if (fileNamePath != null) {
             String fileName = fileNamePath.toString();
             int lastDotIndex = fileName.lastIndexOf('.');
@@ -105,19 +106,29 @@ public class DocReader {
         return "";
     }
 
-    private static String extractContent(File file) throws IOException, TikaException, SAXException {
+    private static DocumentInfo extractDocumentInfo(File file, String extension)
+            throws IOException, TikaException, SAXException {
         BodyContentHandler handler = new BodyContentHandler(-1);
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
+        ParseContext context = configureParseContext();
+
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            parser.parse(inputStream, handler, metadata, context);
+            String mimeType = tika.detect(file);
+            String content = handler.toString().trim();
+            return new DocumentInfo(mimeType, extension, metadata, content);
+        }
+    }
+
+    private static ParseContext configureParseContext() {
         ParseContext context = new ParseContext();
 
-        // Configure PDF parser
         PDFParserConfig pdfConfig = new PDFParserConfig();
         pdfConfig.setExtractInlineImages(false);
         pdfConfig.setExtractUniqueInlineImagesOnly(true);
         context.set(PDFParserConfig.class, pdfConfig);
 
-        // Configure Office parser (PowerPoint, Word, Excel)
         OfficeParserConfig officeConfig = new OfficeParserConfig();
         officeConfig.setUseSAXDocxExtractor(true);
         officeConfig.setUseSAXPptxExtractor(true);
@@ -126,21 +137,40 @@ public class DocReader {
         officeConfig.setExtractMacros(false);
         context.set(OfficeParserConfig.class, officeConfig);
 
-        try (FileInputStream inputStream = new FileInputStream(file)) {
-            parser.parse(inputStream, handler, metadata, context);
-            return handler.toString().trim();
-        }
+        return context;
     }
 
-    private static BMap<BString, Object> createDocumentInfo(String mimeType, String extension, String content) {
+    private static BMap<BString, Object> createDocumentInfo(DocumentInfo docInfo) {
         RecordType resultRecordType =
                 TypeCreator.createRecordType(DOCUMENT_INFO_RECORD, ModuleUtils.getModule(), 0, false, 0);
         BMap<BString, Object> documentInfo = ValueCreator.createRecordValue(resultRecordType);
-        documentInfo.put(StringUtils.fromString(MIME_TYPE_FIELD), 
-                StringUtils.fromString(mimeType != null ? mimeType : DEFAULT_MIME_TYPE));
-        documentInfo.put(StringUtils.fromString(EXTENSION_FIELD), StringUtils.fromString(extension));
-        documentInfo.put(StringUtils.fromString(CONTENT_FIELD), StringUtils.fromString(content));
-        
+
+        documentInfo.put(StringUtils.fromString(MIME_TYPE_FIELD),
+                StringUtils.fromString(docInfo.mimeType() != null ? docInfo.mimeType() : DEFAULT_MIME_TYPE));
+        documentInfo.put(StringUtils.fromString(EXTENSION_FIELD), StringUtils.fromString(docInfo.extension()));
+
+        BMap<BString, Object> metadataMap = createMetadataMap(docInfo.metadata());
+        documentInfo.put(StringUtils.fromString(METADATA_FIELD), metadataMap);
+        documentInfo.put(StringUtils.fromString(CONTENT_FIELD), StringUtils.fromString(docInfo.content()));
+
         return documentInfo;
+    }
+
+    private static BMap<BString, Object> createMetadataMap(Metadata metadata) {
+        BMap<BString, Object> metadataMap = ValueCreator.createMapValue();
+
+        for (String name : metadata.names()) {
+            if (name != null && name.toLowerCase(Locale.ENGLISH).startsWith(X_TIKA_PREFIX)) {
+                continue;
+            }
+
+            String[] values = metadata.getValues(name);
+            if (values != null && values.length > 0) {
+                String value = values.length == 1 ? values[0] : String.join("; ", values);
+                metadataMap.put(StringUtils.fromString(name), StringUtils.fromString(value));
+            }
+        }
+
+        return metadataMap;
     }
 }

@@ -8,7 +8,7 @@
 
 ## Overview
 
-The DocReader module provides functionality for parsing various document formats and extracting their content.
+A Ballerina library that makes it easy to parse and extract content from documents of many formats — similar to Apache Tika, but designed for Ballerina.
 
 ## Usage
 
@@ -23,6 +23,13 @@ public function main() returns error? {
     if result is docreader:DocumentInfo {
         io:println("MIME Type: ", result.mimeType);
         io:println("Extension: ", result.extension);
+        
+        // Access document metadata
+        io:println("Metadata:");
+        foreach string key in result.metadata.keys() {
+            io:println(string `  ${key}: ${result.metadata[key] ?: ""}`);
+        }
+        
         io:println("Content: ", result.content);
     } else {
         io:println("Error: ", result.message());
@@ -47,8 +54,11 @@ Reads a document file and extracts its metadata and content.
 - `DocumentInfo` - A record containing:
   - `mimeType` - The MIME type of the document
   - `extension` - The file extension without the dot
+  - `metadata` - A map containing document metadata (author, title, creation date, etc.)
   - `content` - The extracted text content
 - `Error` - If the file cannot be read or parsed
+
+**Note:** The metadata excludes internal Tika processing fields (X-Tika prefixed fields) and focuses on meaningful document properties.
 
 ## Build from the source
 
