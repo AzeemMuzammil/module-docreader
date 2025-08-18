@@ -49,3 +49,12 @@ public function main() returns error? {
     }
 }
 ```
+
+### Error Handling
+
+```ballerina
+docreader:DocumentInfo|docreader:Error result = docreader:readDocument("./non-existent.txt");
+if result is docreader:Error {
+    io:println("Failed to read document: ", result.message());
+}
+```

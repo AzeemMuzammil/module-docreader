@@ -45,7 +45,7 @@ Reads a document file and extracts its MIME type, extension, metadata, and conte
 - `DocumentInfo` record with `mimeType`, `extension`, `metadata`, and `content` fields
 - `Error` if the file cannot be read or parsed
 
-The `metadata` field contains document properties like author, title, creation date, etc., excluding internal Tika processing fields.
+The `metadata` field contains document properties like author, title, creation date, etc.
 
 ## Building from Source
 

@@ -3,9 +3,3 @@ org = "example"
 name = "document_reading_demo"
 version = "0.1.0"
 distribution = "2201.12.0"
-
-[[dependency]]
-org="xlibb"
-name="docreader"
-version="1.0.0"
-repository="local"

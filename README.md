@@ -58,8 +58,6 @@ Reads a document file and extracts its metadata and content.
   - `content` - The extracted text content
 - `Error` - If the file cannot be read or parsed
 
-**Note:** The metadata excludes internal Tika processing fields (X-Tika prefixed fields) and focuses on meaningful document properties.
-
 ## Build from the source
 
 ### Set up the prerequisites
