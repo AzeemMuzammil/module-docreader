@@ -1,7 +1,7 @@
 [package]
 org = "xlibb"
 name = "docreader"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["xlibb"]
 keywords = ["docreader", "documentation", "reader", "parser"]
 repository = "https://github.com/xlibb/module-docreader"
@@ -11,8 +11,8 @@ distribution = "2201.12.0"
 [[platform.java21.dependency]]
 groupId = "io.xlibb.docreader"
 artifactId = "docreader-native"
-version = "0.1.0"
-path = "../native/build/libs/docreader-native-0.1.0-SNAPSHOT.jar"
+version = "1.0.0"
+path = "../native/build/libs/docreader-native-1.0.0-SNAPSHOT.jar"
 
 [[platform.java21.dependency]]
 groupId = "org.apache.tika"
